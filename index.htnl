@@ -1,0 +1,148 @@
+<!DOCTYPE html>
+<html lang="en"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>BoogieSlip</title>
+<script src="https://cdn.tailwindcss.com"></script>
+<style>
+:root{--bg:#0B0F19;--card:#1E293B;--nav:#020617;--tx:#F8FAFC;--mu:#94A3B8;--bd:#334155;--gr:#10B981;--go:#F59E0B;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}
+[data-theme=light]{--bg:#F8FAFC;--card:#FFFFFF;--nav:#0F172A;--tx:#0F172A;--mu:#64748B;--bd:#CBD5E1;--gr:#059669;--go:#D97706}
+[data-theme=cyber]{--bg:#000;--card:#0D0D0D;--nav:#121212;--tx:#FFF;--mu:#A1A1AA;--bd:#27272A;--gr:#00FF66;--go:#FFD700}
+html,body{height:100%;margin:0}
+body{background:#05070d;font-family:system-ui,-apple-system,Segoe UI,Roboto,sans-serif;display:flex;align-items:center;justify-content:center}
+.phone{position:relative;width:100%;max-width:410px;height:min(570px,100%);background:var(--bg);color:var(--tx);border-radius:28px;border:6px solid #111;box-shadow:0 20px 60px #000a;display:flex;flex-direction:column;overflow:hidden;transition:.3s}
+@media(max-width:500px){.phone{max-width:none;height:100%;border-radius:0;border:0}}
+header{background:var(--nav);color:#F8FAFC;padding:8px 12px 0;flex:none}
+.card{background:var(--card);border:1px solid var(--bd);border-radius:14px;padding:12px;margin-bottom:10px}
+.mu{color:var(--mu)}.gr{color:var(--gr)}.go{color:var(--go)}
+.chip{flex:none;padding:5px 12px;border-radius:99px;border:1px solid var(--bd);font-size:12px;font-weight:600;color:var(--mu);background:transparent;cursor:pointer;white-space:nowrap}
+.chip.on{background:var(--gr);color:#000;border-color:var(--gr)}
+.btn{border:0;border-radius:12px;padding:10px;font-weight:700;font-size:13px;cursor:pointer}
+.pri{background:var(--gr);color:#000}.sec{background:transparent;border:1px solid var(--go);color:var(--go)}
+.ib{background:#ffffff14;border:0;border-radius:10px;width:32px;height:32px;color:#fff;font-size:15px;cursor:pointer}
+main{flex:1;overflow-y:auto;padding:12px}
+nav{display:flex;background:var(--nav);flex:none}
+nav button{flex:1;background:none;border:0;color:#94A3B8;padding:7px 0 5px;font-size:10px;cursor:pointer}
+nav button span{display:block;font-size:17px}
+nav button.on{color:var(--gr)}
+.tag{font-size:9px;border:1px dashed var(--go);color:var(--go);border-radius:6px;padding:1px 5px;font-weight:700}
+.bar{height:6px;border-radius:9px;background:var(--bd);overflow:hidden}.bar i{display:block;height:100%;background:var(--gr)}
+footer{background:var(--nav);color:#94A3B8;font-size:9.5px;text-align:center;padding:4px 8px;flex:none}
+.ov{position:absolute;inset:0;background:#000d;z-index:20;display:none;align-items:center;justify-content:center;padding:18px}
+.ov.show{display:flex}
+.ov>div{background:var(--card);border:1px solid var(--bd);border-radius:18px;padding:16px;width:100%;max-height:90%;overflow:auto}
+table{width:100%;font-size:12px;border-collapse:collapse}th{color:var(--mu);font-weight:600;text-align:left;padding:4px 2px}td{padding:7px 2px;border-top:1px solid var(--bd)}
+input[type=range]{width:100%;accent-color:var(--gr)}
+.sw{height:56px;border-radius:10px;display:flex;align-items:flex-end;padding:6px 8px;font:700 12px monospace;cursor:pointer;border:1px solid var(--bd)}
+#toast{position:absolute;bottom:80px;left:50%;transform:translateX(-50%);background:var(--gr);color:#000;font-weight:700;font-size:12px;padding:8px 14px;border-radius:99px;opacity:0;transition:.3s;z-index:30;pointer-events:none}
+</style></head>
+<body>
+<div class="phone" id="app">
+<header>
+  <div class="flex items-center gap-2">
+    <div class="font-black text-lg tracking-tight">⚽ Boogie<span class="gr">Slip</span></div>
+    <span class="chip on" id="badge" style="padding:2px 9px;font-size:11px">PSL</span>
+    <div class="ml-auto flex gap-2"><button class="ib" id="themeBtn" title="Theme">🎨</button><button class="ib" id="dirBtn" title="Leagues">☰</button></div>
+  </div>
+  <div class="flex gap-2 overflow-x-auto py-2" id="chips"></div>
+</header>
+<main id="view"></main>
+<footer id="ft"></footer>
+<nav id="nav"></nav>
+
+<div class="ov" id="dir"><div><div class="flex items-center mb-2"><b>League directory</b><button class="ib ml-auto" onclick="dir.classList.remove('show')">✕</button></div><div class="mu text-xs mb-2">A directory of sample leagues</div><div id="dirList"></div></div></div>
+<div class="ov show" id="gate" style="z-index:40;background:#000f"><div class="text-center"><div class="text-4xl">🔞</div><h2 class="font-black text-xl my-2">Are you 18 or older?</h2><p class="mu text-sm mb-4">BoogieSlip shows sports analysis and estimates. Betting involves risk and is for adults only. Never bet money you can't afford to lose.</p><button class="btn pri w-full mb-2" id="yes">I'm 18+ · Enter</button><button class="btn sec w-full" id="no">I'm under 18</button><p id="nomsg" class="mu text-xs mt-3"></p></div></div>
+<div id="toast"></div>
+</div>
+
+<script>
+/* ===== SETTINGS: edit these ===== */
+const SAMPLE=false;            // set to false once your picks below are REAL (hides "sample data" labels)
+const CONTACT='Kamogelokayman36@gmail.com'; // put your real contact email here
+const APPNAME='BoogieSlip';
+/* ===== DAILY PICKS: edit the lines in M below =====
+ Each pick = [home, away, kickoff, pick, bookmaker decimal odds, YOUR estimate %, 'Low'/'Medium'/'High', 'why this pick'] */
+const L={psl:{n:'Betway Premiership',f:'🇿🇦',s:'PSL'},epl:{n:'Premier League',f:'🏴',s:'EPL'},caf:{n:'CAF Champions League',f:'🌍',s:'CAF'},liga:{n:'La Liga',f:'🇪🇸',s:'LIGA'}};
+const M={
+psl:[['Richards Bay','Mamelodi Sundowns','Tue 13 Oct 19:30','Away Win',1.5,60,'High','Sundowns are clear favourites away. The price is short, so a draw or upset still beats this pick.'],
+['Orlando Pirates','TS Galaxy','Sun 18 Oct 18:00','Home Win',1.55,59,'Medium','Pirates are the market favourite at home and one of the shortest prices on the PSL list. Check team news before kickoff.'],
+['Golden Arrows','Milford FC','Sat 17 Oct 15:30','Home Win',1.85,49,'Low','Home side is a modest favourite but this is close to a coin flip.'],
+['Sekhukhune United','Marumo Gallants','Sat 17 Oct 18:00','Home Win',1.95,47,'Low','Slight home favourite and the margin is thin. A draw is a real possibility.'],
+['Kaizer Chiefs','Stellenbosch FC','Sat 17 Oct 15:30','Home Win',2.15,43,'Low','Chiefs are the slight favourite at home. Higher odds, but a low chance of landing.']],
+epl:[['Arsenal','Leeds United','Sat 10 Oct 13:30','Home Win',1.45,65,'High','Reigning champions at home against a side priced as a big underdog.'],
+['Chelsea','AFC Bournemouth','Sat 10 Oct 16:00','Home Win',1.55,60,'High','Home favourite at Stamford Bridge. The market sees a fairly clear edge.'],
+['Coventry City','Newcastle United','Mon 12 Oct 21:00','Away Win',1.8,52,'Medium','Newly promoted Coventry at home. The market makes Newcastle the favourite.'],
+['Aston Villa','Brentford','Sat 10 Oct 16:00','Home Win',1.85,50,'Medium','Home side is a modest favourite in a fairly even match.'],
+['Crystal Palace','Nottingham Forest','Sun 11 Oct 15:00','Home Win',2.1,45,'Low','Narrow home favourite. Draws are common in this type of match.']],
+caf:[['APR FC','Zamalek SC','Fri 16 Oct (time TBC)','Away Win',1.85,50,'Medium','First leg of a two-leg tie. Zamalek are the market favourite away, but a first-leg result does not decide the tie.'],
+['African Stars','Orlando Pirates','Sat 17 Oct (time TBC)','Away Win',2.1,44,'Low','First leg away from home. Pirates are favourites, but away legs in this round are tough and a draw is likely.'],
+['Wiliete SC','Mamelodi Sundowns','Sat 17 Oct (time TBC)','Away Win',1.9,49,'Low','Sundowns are the reigning African champions, but Wiliete finished second in Angola last season. Close to a coin flip on the odds.'],
+['TP Mazembe','Club Africain','Sat 17 Oct (time TBC)','Home Win',1.7,55,'Medium','Mazembe are home favourites in the first leg. Two-leg tie, so the return leg matters too.']],
+liga:[['FC Barcelona','Getafe','10-11 Oct (date/time TBC)','Home Win',1.25,75,'High','Heavy market favourites at home. The price is very short, so the payout is small for the risk.'],
+['Real Madrid','Villarreal','Sun 11 Oct (time TBC)','Home Win',1.4,67,'High','Strong home favourites. Short price, so it adds little to a slip but lowers the odds of a miss.'],
+['Real Madrid','Sevilla','Sun 18 Oct (time TBC)','Home Win',1.35,71,'High','Strong home favourites against a side priced as a clear underdog.'],
+['Real Betis','FC Barcelona','Sun 18 Oct (time TBC)','Away Win',1.9,49,'Low','Barcelona are slight favourites away but this is close to a coin flip. A draw or Betis win is quite possible.']]};
+const T={psl:[],epl:[],caf:[],liga:[]};
+const $=s=>document.querySelector(s);
+let st={lg:'psl',tab:'slip',legs:3,theme:0,slip:[]};
+const themes=['dark','light','cyber'],tn=['Dark Stadium','Light Day-Match','Mzansi Cyber'];
+const shuf=a=>a.map(x=>[Math.random(),x]).sort((a,b)=>a[0]-b[0]).map(x=>x[1]);
+const all=()=>[...M[st.lg],...shuf(Object.keys(M).filter(k=>k!=st.lg).flatMap(k=>M[k]))];
+function gen(){st.slip=[...shuf(M[st.lg]),...shuf(Object.keys(M).filter(k=>k!=st.lg).flatMap(k=>M[k]))].slice(0,st.legs)}
+function toast(t){const e=$('#toast');e.textContent=t;e.style.opacity=1;setTimeout(()=>e.style.opacity=0,1600)}
+const tag=SAMPLE?'<span class="tag">SAMPLE DATA</span>':'';
+const cc=c=>c=='High'?'gr':c=='Medium'?'go':'mu';
+function legCard(m,i){const imp=(100/m[4]).toFixed(0);return `<div class="card"><div class="flex items-center text-xs mu"><span>${i!=null?'Leg '+(i+1)+' · ':''}${m[2]}</span><span class="ml-auto ${cc(m[6])} font-bold">${m[6]} confidence</span></div>
+<div class="font-bold my-1">${m[0]} vs ${m[1]}</div>
+<div class="flex items-center gap-2"><span class="go font-bold text-sm">${m[3]}</span><span class="ml-auto font-black">@ ${m[4].toFixed(2)}</span></div>
+<div class="flex text-[11px] mu mt-2 gap-3"><span>Our estimate <b class="gr">${m[5]}%</b></span><span>Bookmaker implied <b>${imp}%</b></span></div>
+<div class="bar mt-1"><i style="width:${m[5]}%"></i></div>
+<p class="text-xs mt-2 mu"><b style="color:var(--tx)">Why this pick:</b> ${m[7]}</p></div>`}
+function slipSum(){const o=st.slip.reduce((a,m)=>a*m[4],1),p=st.slip.reduce((a,m)=>a*m[5]/100,1)*100;return{o,p,pay:o*100}}
+function vSlip(){const s=slipSum();return `<div class="flex items-center mb-2"><b>Auto-Slip Builder</b><span class="ml-auto">${tag}</span></div>
+<div class="card"><div class="flex items-center mb-2"><span class="text-sm mu">Legs</span><span class="chip on ml-2">${st.legs} legs</span></div>
+<div class="flex gap-2 mb-3">${[2,3,5,7,10].map(n=>`<button class="chip ${n==st.legs?'on':''}" data-n="${n}">${n}</button>`).join('')}</div>
+<input type="range" min="2" max="10" value="${st.legs}" id="rng"></div>
+${st.slip.map(legCard).join('')}
+<div class="card" style="border-color:var(--go)"><div class="text-xs mu mb-2">SLIP SUMMARY (R100 stake)</div>
+<div class="grid grid-cols-3 gap-2 text-center"><div><div class="text-[10px] mu">Combined Odds</div><div class="font-black go">${s.o.toFixed(2)}</div></div><div><div class="text-[10px] mu">Est. Payout</div><div class="font-black gr">R${s.pay.toFixed(0)}</div></div><div><div class="text-[10px] mu">Combined Win Prob.</div><div class="font-black">${s.p.toFixed(1)}%</div></div></div>
+<p class="text-[11px] mu mt-2">${s.p<10?'⚠️ Low chance: most slips this size lose. Treat as entertainment, not income.':'Even the safest slips can lose. Only stake what you can afford.'}</p></div>
+<div class="flex gap-2 mb-2"><button class="btn pri flex-1" id="regen">🔄 Regenerate Legs</button><button class="btn sec flex-1" id="copy">📋 Copy Slip Summary</button></div>`}
+function vPicks(){const tr=[];
+return `<div class="flex items-center mb-2"><b>${L[st.lg].n} Picks</b><span class="ml-auto">${tag}</span></div>${M[st.lg].map(m=>legCard(m)).join('')}
+<div class="card"><div class="flex items-center mb-2"><b>📈 Track Record</b></div>${tr.map(r=>`<div class="flex text-xs py-1 border-t" style="border-color:var(--bd)"><span>${r[0]} · <span class="mu">${r[1]}</span></span><b class="ml-auto ${r[2]=='WIN'?'gr':'go'}">${r[2]}</b></div>`).join('')}<p class="text-[11px] mu mt-2">No results yet. After each matchday, every result (wins and losses) will be added here.</p></div>`}
+function vLog(){return `<div class="flex items-center mb-2"><b>${L[st.lg].f} ${L[st.lg].n} Log</b><span class="ml-auto">${tag}</span></div><div class="card"><table><tr><th>#</th><th>Team</th><th>P</th><th>GD</th><th>Pts</th></tr>${T[st.lg].map((r,i)=>`<tr><td class="${i<2?'gr':''} font-bold">${i+1}</td><td>${r[0]}</td><td>${r[1]}</td><td>${r[2]>0?'+':''}${r[2]}</td><td><b>${r[3]}</b></td></tr>`).join('')}</table></div>`}
+function vPal(){const S=[['Diski Pitch Green','#10B981','Primary actions, wins, positive stats'],['Mzansi Trophy Gold','#F59E0B','Odds, highlights, warnings'],['Stadium Night Slate','#0B0F19','Main background, dark mode canvas'],['Card Slate','#1E293B','Cards and surfaces'],['Neon Green (Cyber)','#00FF66','High-contrast mode accent']];
+return `<b>Mzansi Palette</b><p class="mu text-xs mb-2">Tap a swatch to copy its hex. Current theme: <b class="go">${tn[st.theme]}</b></p>${S.map(s=>`<div class="card"><div class="sw" style="background:${s[1]};color:${s[1]=='#F59E0B'||s[1]=='#10B981'||s[1]=='#00FF66'?'#000':'#fff'}" data-hex="${s[1]}">${s[1]}</div><div class="font-bold mt-2 text-sm">${s[0]}</div><div class="mu text-xs">${s[2]}</div></div>`).join('')}`}
+let sub='about';
+function vInfo(){const P={
+about:`<h3 class="font-bold mb-1">About ${APPNAME}</h3><p class="text-sm mu mb-2">${APPNAME} is a football analysis tool that helps you build accumulator slips with reasons behind every pick. We show our own probability estimate next to the bookmaker's implied probability, so you can see where we think the odds are fair or not.</p><p class="text-sm mu mb-2">We do not guarantee results. Nobody can predict football reliably. Picks are analysis and opinion, not advice, and most accumulators lose. ${APPNAME} is not a bookmaker and does not accept bets or money.</p><p class="text-sm mu">Every pick is logged with its result, wins and losses, on the Picks page.</p>`,
+privacy:`<h3 class="font-bold mb-1">Privacy Policy</h3><p class="text-xs mu mb-2">Last updated: ${new Date().toISOString().slice(0,10)}</p><p class="text-sm mu mb-2"><b>What we collect:</b> ${APPNAME} has no accounts and does not ask for your name, email or phone number. Your browser stores one small item on your device to remember that you confirmed you are 18+.</p><p class="text-sm mu mb-2"><b>Third parties:</b> If we add affiliate links or ads, those partners (such as bookmakers or ad networks) may use cookies or collect data under their own privacy policies once you click through. Links to bookmakers will be marked.</p><p class="text-sm mu mb-2"><b>Age:</b> This site is for people 18 and older only.</p><p class="text-sm mu"><b>Questions:</b> email ${CONTACT}.</p>`,
+terms:`<h3 class="font-bold mb-1">Disclaimer</h3><p class="text-sm mu mb-2">Content on ${APPNAME} is for information and entertainment only and is not financial or betting advice. Past results do not predict future results. You are responsible for your own decisions.</p><p class="text-sm mu mb-2">Only bet with licensed operators, only if you are 18+, and never bet money you cannot afford to lose.</p><p class="text-sm mu"><b>Need help?</b> South African Responsible Gambling Foundation helpline: 0800 006 008 (free).</p>`,
+contact:`<h3 class="font-bold mb-1">Contact</h3><p class="text-sm mu mb-2">Feedback, corrections or business enquiries:</p><p class="text-sm"><a class="gr font-bold" href="mailto:${CONTACT}">${CONTACT}</a></p>`};
+return `<div class="flex gap-2 overflow-x-auto mb-3">${[['about','About'],['privacy','Privacy'],['terms','Disclaimer'],['contact','Contact']].map(s=>`<button class="chip ${s[0]==sub?'on':''}" data-sub="${s[0]}">${s[1]}</button>`).join('')}</div><div class="card">${P[sub]}</div>`}
+const tabs=[['slip','🎯','Auto-Slip'],['picks','🔥','Picks'],['info','ℹ️','About'],['pal','🎨','Palette']];
+function render(){document.documentElement.dataset.theme=themes[st.theme];
+$('#chips').innerHTML=Object.entries(L).map(([k,v])=>`<button class="chip ${k==st.lg?'on':''}" data-lg="${k}">${v.f} ${v.s}</button>`).join('');
+$('#badge').textContent=L[st.lg].s;
+$('#nav').innerHTML=tabs.map(t=>`<button class="${t[0]==st.tab?'on':''}" data-t="${t[0]}"><span>${t[1]}</span>${t[2]}</button>`).join('');
+$('#view').innerHTML={slip:vSlip,picks:vPicks,log:vLog,pal:vPal,info:vInfo}[st.tab]();
+$('#ft').textContent=(SAMPLE?'Sample data – not real predictions · ':'')+'Times SAST · Odds are indicative and change, check your bookmaker · Estimates are derived from market odds · 18+ · Betting involves risk. SA helpline: 0800 006 008';}
+document.addEventListener('click',e=>{const t=e.target.closest('[data-lg],[data-t],[data-n],[data-hex],[data-sub],#regen,#copy');if(!t)return;
+if(t.dataset.sub)sub=t.dataset.sub;
+else if(t.dataset.lg){st.lg=t.dataset.lg;gen();dir.classList.remove('show')}
+else if(t.dataset.t)st.tab=t.dataset.t;
+else if(t.dataset.n){st.legs=+t.dataset.n;gen()}
+else if(t.dataset.hex){try{navigator.clipboard.writeText(t.dataset.hex)}catch(x){}toast('Copied '+t.dataset.hex);return}
+else if(t.id=='regen'){gen();toast('New combination')}
+else if(t.id=='copy'){const s=slipSum(),tx=APPNAME+(SAMPLE?' (sample data)':'')+'\n'+st.slip.map((m,i)=>`${i+1}. ${m[0]} vs ${m[1]} – ${m[3]} @ ${m[4]}`).join('\n')+`\nCombined odds ${s.o.toFixed(2)} | Est. payout R${s.pay.toFixed(0)} | Combined win prob ${s.p.toFixed(1)}%\nBet responsibly. 18+`;try{navigator.clipboard.writeText(tx).then(()=>toast('Slip summary copied'),()=>toast('Copy blocked by browser'))}catch(x){toast('Copy blocked by browser')}return}
+render()});
+document.addEventListener('input',e=>{if(e.target.id=='rng'){st.legs=+e.target.value;gen();const y=$('#view').scrollTop;render();$('#view').scrollTop=y}});
+$('#themeBtn').onclick=()=>{st.theme=(st.theme+1)%3;render();toast(tn[st.theme])};
+$('#dirBtn').onclick=()=>{dir.classList.add('show')};
+$('#dirList').innerHTML=Object.entries(L).map(([k,v])=>`<button class="chip w-full text-left mb-2" style="padding:10px 14px;font-size:13px" data-lg="${k}">${v.f} ${v.n}</button>`).join('')+['🌍 CAF Champions League','🇪🇸 La Liga','🇩🇪 Bundesliga','🇮🇹 Serie A'].map(x=>`<div class="mu text-sm px-3 py-2">${x} <span class="tag">soon</span></div>`).join('');
+let ok=false;try{ok=localStorage.getItem('bs18')=='1'}catch(e){}
+if(ok)$('#gate').classList.remove('show');
+$('#yes').onclick=()=>{try{localStorage.setItem('bs18','1')}catch(e){}$('#gate').classList.remove('show')};
+$('#no').onclick=()=>{$('#nomsg').textContent='Sorry, BoogieSlip is for adults only. Please come back when you are 18.'};
+const dir=$('#dir');gen();render();
+</script></body></html>
